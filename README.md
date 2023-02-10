@@ -26,7 +26,7 @@ This is a graph-based representation learning method for predicting gene-phenoty
 #### Step2: Run Graphpheno model
 > cd src/Graphpheno     
 > python main.py    
-> **Run main.py to get the embedding vector for each protein and evaluate the model. Note there are several parameters can be tuned.**
+> **Run main.py to get the embedding vector for each protein and evaluate the model. Note there are several hyperparameters can be tuned.**
 
 
 #### Step3: Get the predicted gene-phenotype association data set
