@@ -21,7 +21,7 @@ This is a graph-based representation learning method for predicting gene-phenoty
 > cd src/progressing    
 > python progressing.py 
 
-> **Protein sequence data is downloaded from Uniprot and PPI network is downloaded from STRING. The output data includes screened protein networks and protein characteristic information divided into training set and prediction sets.**
+> **Protein sequence data is downloaded from UniProt and PPI network is downloaded from STRING. The output data includes screened protein networks and protein characteristic information divided into training set and prediction sets.**
 
 #### Step2: Run Graphpheno model
 > cd src/Graphpheno     
