@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+# #####nohup ./Baseline_PPIpreScore.py >PPIpreScorelog 2>&1 &
+
+import numpy as np 
+import pandas as pd
+import os
+
+HPtermsLst = [i.strip() for i in os.popen("cat hp_list.txt").readlines()]
+queryGeneLst = [i.strip() for i in os.popen("cat IDmappingWithInd |awk -F, 'NR!=1{print $3}' ").readlines()]
+
+mapping = pd.read_csv("IDmappingWithInd")
+HPterm_EnsemblID_test = pd.read_pickle("knownGeneEnsemblID.pkl")
+HPterm_EnsemblID_test.set_index("HPterm",inplace = True)
+
+ppi2 = pd.read_pickle("PPI_wide.pkl")
+threshold = 300.0
+
+def numeratorCompute(knownGeneEnsemblIDlen,HPOterm:str,queryGeneLst:list,thr:float,ppi_ssn): 
+    nDENO = knownGeneEnsemblIDlen.loc[HPOterm,"len_knownGene"]
+    if(nDENO == 0):  
+        scoreArray = np.zeros((3935,))
+        scoreSeries = pd.Series(scoreArray.tolist(), index=queryGeneLst)
+        return scoreSeries    
+    Query = ppi_ssn.reindex(index=queryGeneLst,columns=knownGeneEnsemblIDlen.loc[HPOterm,"EnsemblID"],fill_value=-3)
+    df_threshold = Query > thr     
+    n = df_threshold.apply(sum,axis=1)
+    return n/nDENO
+
+gene4000 = ppi2.reindex(index=queryGeneLst,fill_value=-3)
+gene4000_thr = gene4000 > threshold
+m = gene4000_thr.apply(sum,axis=1)
+denominator = m/20000
+
+def tanh(x:list):
+    lists = list()
+    min_x = min(x);delta = max(x) - min_x
+    if(delta == 0):
+        return [0] * len(x)
+    for i in range(len(x)):
+        lists.append( (x[i] - min_x) / delta )
+    return lists
+
+y_score_hp_list = []
+for term in HPtermsLst:
+    numerator = numeratorCompute(knownGeneEnsemblIDlen=HPterm_EnsemblID_test,HPOterm=term,queryGeneLst=queryGeneLst,thr=threshold,ppi_ssn=ppi2)
+    scoreWithNaN = (numerator / denominator)
+    score = scoreWithNaN.fillna(value=0.0) 
+    y_score_hp = tanh(score.tolist())
+    y_score_hp_list.append(y_score_hp)
+y_hp_data = np.vstack(y_score_hp_list)
+pd.DataFrame(y_hp_data.T).to_pickle("PPIoriginalScore.pkl")
+y_hp_data = y_hp_data.T
+
+pd.DataFrame(y_hp_data).to_csv("PPIgcn_vae_1_phe_pre.txt",index=True,sep="\t",index_label='id',header=HPtermsLst)
+pd.DataFrame(y_hp_data).to_pickle("PPIgcn_vae_1_phe_pre.pkl")
